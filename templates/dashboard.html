@@ -1,0 +1,1596 @@
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Splunk-Jenkins Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: {{ colors.primary }};
+            --secondary: {{ colors.secondary }};
+            --accent: {{ colors.accent }};
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+        }
+        
+        .main-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        
+        .header-card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            border: none;
+            overflow: hidden;
+        }
+        
+        .avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+            object-fit: cover;
+        }
+        
+        .ai-badge {
+            background: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        
+        .form-card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 0.25rem rgba(78, 121, 167, 0.25);
+        }
+        
+        .ai-tip {
+            background: linear-gradient(135deg, rgba(232, 244, 248, 0.9), rgba(225, 239, 247, 0.9));
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-style: italic;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ai-tip:before {
+            content: "💡 AI Tip";
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .ai-tip:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            opacity: 0.1;
+            border-radius: 50%;
+            transform: translate(20px, -20px);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .suggestion-badge {
+            display: inline-block;
+            background: rgba(78, 121, 167, 0.1);
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(78, 121, 167, 0.2);
+        }
+        
+        .suggestion-badge:hover {
+            background: rgba(78, 121, 167, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .add-repo-btn {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 10px;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .add-repo-btn i {
+            margin-right: 5px;
+        }
+        
+        .cron-explanation {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .floating-label {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .floating-label .form-control {
+            padding-top: 25px;
+        }
+        
+        .floating-label label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+        
+        .custom-cron-container {
+            background: rgba(248, 249, 250, 0.7);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px dashed #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="card header-card">
+            <!-- <div class="card-body">
+                <div class="d-flex align-items-center">
+                    {% if user.avatar_url %}
+                    <img src="{{ user.avatar_url }}" class="avatar me-3" alt="User Avatar">
+                    {% endif %}
+                    <div>
+                        <h2 class="mb-1">AI Splunk-Jenkins Assistant <span class="ai-badge">Beta</span></h2>
+                        <p class="mb-0 text-muted">Welcome back, {{ user.name or user.username }}! Let's configure your monitoring pipeline.</p>
+                    </div>
+                </div>
+                <span class="ai-badge">Beta</span>
+            </div> -->
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    {% if user.avatar_url %}
+                    <img src="{{ user.avatar_url }}" class="avatar me-3" alt="User Avatar">
+                    {% endif %}
+                    <div>
+                        <h2 class="mb-1"> BuildOps AI Monitor  </h2>
+                        <p class="mb-0 text-muted">Welcome back, {{ user.name or user.username }}! Ready to enhance your Jenkins and Splunk integration?</p>
+                    </div>
+                </div>
+            </div>
+           
+
+        </div>
+
+        <div class="ai-tip">{{ ai_tip }}</div>
+
+        <form action="/submit" method="POST" class="form-card">
+            <h3 class="section-title">Project Configuration</h3>
+            
+            <div class="mb-3 floating-label">
+                <input type="email" name="email" class="form-control" placeholder=" "  required>
+                <label>Your Email Address</label>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="business_name" class="form-control" required onkeyup="suggestIndex()">
+                <label>Business/Project Name</label>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="index_name" class="form-control" placeholder=" " id="indexInput">
+                <label>Index Name</label>
+                <div id="index-suggestions" style="display:none; margin-top:10px;">
+                    <p class="text-muted mb-2">AI Suggestions:</p>
+                    <div id="suggestionBadges"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Select Repository</label>
+                <div class="search-container">
+                    <input type="text" class="form-control" id="repoSearch" placeholder="Search repositories...">
+                    <i class="bi bi-search search-icon"></i>
+                </div>
+                <select name="repo_url" class="form-select" required id="repoSelect">
+                    {% for repo in repos %}
+                        <option value="{{ repo.html_url }}">{{ repo.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="mt-2">
+                    <a href="https://github.com/new" target="_blank" class="add-repo-btn">
+                        <i class="bi bi-plus-circle"></i> Create New Repository
+                    </a>
+                </div>
+            </div>
+
+            <h3 class="section-title mt-4">Monitoring Setup</h3>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="monitor_path" class="form-control" required>
+                <label>Monitor Path (Log Location)</label>
+                <small class="text-muted">Example: /var/log/app/*.log</small>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="source_type" class="form-control">
+                <label>Source Type (optional)</label>
+                <small class="text-muted">Example: json, syslog, or custom type</small>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="agent_label" class="form-control" required>
+                <label>Jenkins Agent Label</label>
+                <small class="text-muted">Example: 'gpu-nodes' or 'azure-team'</small>
+            </div>
+
+            <h3 class="section-title mt-4">Cron Expression Validator & Explainer</h3>
+           <div id="cron-validator-wrapper" class="custom-cron-container mt-4">
+    <label for="cron_schedule" class="form-label">Cron Schedule</label>
+    <input
+        type="text"
+        id="cron_schedule"
+        name="cron_schedule"
+        class="form-control mt-2"
+        placeholder="e.g. */15 * * * *"
+        autocomplete="off"
+        spellcheck="false"
+        required
+    />
+    <div id="cronOutput" class="output mt-3" style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 10px; color: #212529;">
+        Explanation will appear here...
+    </div>
+</div>
+<!-- <i class="bi bi-gear-fill me-2"></i> -->
+<div class="d-grid mt-3">
+    <button type="button" class="btn btn-outline-success btn-lg" onclick="createJenkinsJob()">
+         Create Jenkins Pipeline on Server
+    </button>
+</div>
+
+<script>
+    const cronInput = document.getElementById('cron_schedule');
+    const cronOutput = document.getElementById('cronOutput');
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function explainField(value, fieldName) {
+        if (value === '*') return `every ${fieldName}`;
+        if (value.startsWith('*/')) return `every ${value.slice(2)} ${fieldName}${value.slice(2) > 1 ? 's' : ''}`;
+        if (value.includes(',')) {
+            const vals = value.split(',').map(v => fieldName === 'day of week' && !isNaN(v) ? daysOfWeek[+v] : v);
+            return `${fieldName} is ${vals.join(', ')}`;
+        }
+        if (value.includes('-')) {
+            const [start, end] = value.split('-');
+            return `${fieldName} from ${start} to ${end}`;
+        }
+        if (fieldName === 'day of week' && !isNaN(value)) return `${fieldName} is ${daysOfWeek[+value]}`;
+        return `${fieldName} is ${value}`;
+    }
+
+    function parseCron(expr) {
+        const parts = expr.trim().split(/\s+/);
+        if (parts.length !== 5) return { error: 'Cron expression must have exactly 5 fields separated by spaces.' };
+
+        const [min, hour, dayOfMonth, month, dayOfWeek] = parts;
+        const validPart = part => /^(\*|(\*\/\d+)|(\d+(-\d+)?)(,\d+(-\d+)?)*)$/.test(part.toLowerCase());
+
+        for (let i = 0; i < 5; i++) {
+            if (!validPart(parts[i])) return { error: `Invalid value in field ${i+1}: "${parts[i]}"` };
+        }
+
+        const explanations = [
+            explainField(min, 'minute'),
+            explainField(hour, 'hour'),
+            explainField(dayOfMonth, 'day of month'),
+            explainField(month, 'month'),
+            explainField(dayOfWeek, 'day of week')
+        ];
+
+        return { explanation: explanations.join(', ') + '.' };
+    }
+
+    cronInput.addEventListener('input', () => {
+        const value = cronInput.value;
+        if (!value) {
+            cronOutput.textContent = 'Explanation will appear here...';
+            cronOutput.classList.remove('text-danger');
+            return;
+        }
+
+        const result = parseCron(value);
+        if (result.error) {
+            cronOutput.textContent = result.error;
+            cronOutput.classList.add('text-danger');
+        } else {
+            cronOutput.textContent = result.explanation;
+            cronOutput.classList.remove('text-danger');
+        }
+    });
+</script>
+<script>
+function createJenkinsJob() {
+    // Querying the form elements
+    const projectInput = document.querySelector('[name="business_name"]');
+    const monitorInput = document.querySelector('[name="monitor_path"]');
+    const agentInput = document.querySelector('[name="agent_label"]');
+    const indexInput = document.querySelector('[name="index_name"]');
+    const cronInput = document.getElementById('cron_schedule'); // Ensure the correct ID for the cron input
+
+    console.log({ projectInput, monitorInput, agentInput, indexInput, cronInput });
+
+    // Check if any input field is missing
+    if (!projectInput || !monitorInput || !agentInput || !indexInput || !cronInput) {
+        alert("❌ One or more input fields are missing in the DOM!");
+        return;
+    }
+
+    // Get the values from the form fields
+    const projectName = projectInput.value;
+    const monitorPath = monitorInput.value;
+    const agentLabel = agentInput.value;
+    const indexName = indexInput.value;
+    const cron = cronInput.value;
+
+    // Log the values for debugging
+    console.log({ projectName, monitorPath, agentLabel, indexName, cron });
+
+    // Send data to the server
+    fetch('/create-jenkins-job', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            project_name: projectName,
+            monitor_path: monitorPath,
+            agent_label: agentLabel,
+            index_name: indexName,
+            cron_expression: cron
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Jenkins job created: " + data.job_name);
+        } else {
+            alert("❌ Failed: " + data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("❌ Error creating Jenkins job.");
+    });
+}
+</script>
+
+           
+<!-- <div id="cron-validator-wrapper" class="custom-cron-container mt-4">
+    
+    <input
+        type="text"
+        id="cronInput"
+        class="form-control mt-2"
+        placeholder="Enter cron (e.g. */9 * */5 * *)"
+        autocomplete="off"
+        spellcheck="false"
+    />
+    <div id="cronOutput" class="output mt-3" style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 10px; color: #212529;">
+        Explanation will appear here...
+    </div>
+</div>
+
+<script>
+    const cronInput = document.getElementById('cronInput');
+    const cronOutput = document.getElementById('cronOutput');
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function explainField(value, fieldName) {
+        if (value === '*') return `every ${fieldName}`;
+        else if (value.startsWith('*/')) {
+            return `every ${value.slice(2)} ${fieldName}${value.slice(2) > 1 ? 's' : ''}`;
+        } else if (value.includes(',')) {
+            const vals = value.split(',').map(v => (fieldName === 'day of week' && !isNaN(v) ? daysOfWeek[+v] : v));
+            return `${fieldName} is ${vals.join(', ')}`;
+        } else if (value.includes('-')) {
+            const range = value.split('-');
+            return `${fieldName} from ${range[0]} to ${range[1]}`;
+        } else {
+            if (fieldName === 'day of week' && !isNaN(value)) return `${fieldName} is ${daysOfWeek[+value]}`;
+            return `${fieldName} is ${value}`;
+        }
+    }
+
+    function parseCron(expr) {
+        const parts = expr.trim().split(/\s+/);
+        if (parts.length !== 5) return { error: 'Cron expression must have exactly 5 fields separated by spaces.' };
+
+        const [min, hour, dayOfMonth, month, dayOfWeek] = parts;
+        const validPart = part => /^(\*|(\*\/\d+)|(\d+(-\d+)?)(,\d+(-\d+)?)*)$/.test(part.toLowerCase());
+
+        for (let i = 0; i < 5; i++) {
+            if (!validPart(parts[i])) return { error: `Invalid value in field ${i+1}: "${parts[i]}"` };
+        }
+
+        const explanations = [
+            explainField(min, 'minute'),
+            explainField(hour, 'hour'),
+            explainField(dayOfMonth, 'day of month'),
+            explainField(month, 'month'),
+            explainField(dayOfWeek, 'day of week')
+        ];
+
+        return { explanation: explanations.join(', ') + '.' };
+    }
+
+    cronInput.addEventListener('input', () => {
+        const value = cronInput.value;
+        if (!value) {
+            cronOutput.textContent = 'Explanation will appear here...';
+            cronOutput.classList.remove('text-danger');
+            return;
+        }
+
+        const result = parseCron(value);
+        if (result.error) {
+            cronOutput.textContent = result.error;
+            cronOutput.classList.add('text-danger');
+        } else {
+            cronOutput.textContent = result.explanation;
+            cronOutput.classList.remove('text-danger');
+        }
+    });
+</script> -->
+
+
+            <!-- <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-magic me-2"></i> Generate AI-Optimized Pipeline
+                </button>
+            </div> -->
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    View Optimized Pipeline
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle custom cron field
+        function toggleCustomCron(value) {
+            const field = document.getElementById('custom_cron');
+            field.style.display = (value === 'Custom AI Schedule') ? 'block' : 'none';
+        }
+        
+        // Suggest index names
+        // function suggestIndex() {
+        //     const businessName = document.getElementsByName('business_name')[0].value;
+        //     if(businessName) {
+        //         const base = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        //         const currentYear = new Date().getFullYear();
+                
+        //         const suggestions = [
+        //             `${base}-logs-${currentYear}`,
+        //             `${base}-metrics`,
+        //             `${base}-analytics`,
+        //             `${base}-data`,
+        //             `monitoring-${base}`
+        //         ];
+                
+        //         const badgesContainer = document.getElementById('suggestionBadges');
+        //         badgesContainer.innerHTML = '';
+                
+        //         suggestions.forEach(suggestion => {
+        //             const badge = document.createElement('span');
+        //             badge.className = 'suggestion-badge';
+        //             badge.textContent = suggestion;
+        //             badge.onclick = () => {
+        //                 document.getElementsByName('index_name')[0].value = suggestion;
+        //             };
+        //             badgesContainer.appendChild(badge);
+        //         });
+                
+        //         document.getElementById('index-suggestions').style.display = 'block';
+        //     } else {
+        //         document.getElementById('index-suggestions').style.display = 'none';
+        //     }
+        // }
+        function suggestIndex() {
+    const businessName = document.getElementsByName('business_name')[0].value;
+
+    if (businessName) {
+        const base = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        const currentYear = new Date().getFullYear();
+
+        const allSuggestions = [
+            `${base}-logs-${currentYear}`,
+            `ai-${base}-insights`,
+            `ml-${base}-analytics`,
+            `${base}-neural-data`,
+            `smart-${base}-tracker`,
+            `deep-${base}-signals`,
+            `${base}-observability`,
+            `${base}-data-pipeline`,
+            `monitoring-${base}`,
+            `intelligent-${base}-logs`,
+            `${base}-metrics-${currentYear}`,
+            `logai-${base}-index`,
+            `${base}-eventflow`,
+            `predictive-${base}-data`,
+            `${base}-ai-streams`
+        ];
+
+        // Randomly pick between 5 and 10 suggestions
+        const count = Math.floor(Math.random() * 6) + 5; // 5 to 10
+        const shuffled = allSuggestions.sort(() => 0.5 - Math.random());
+        const selectedSuggestions = shuffled.slice(0, count);
+
+        const badgesContainer = document.getElementById('suggestionBadges');
+        badgesContainer.innerHTML = '';
+
+        selectedSuggestions.forEach(suggestion => {
+            const badge = document.createElement('span');
+            badge.className = 'suggestion-badge';
+            badge.textContent = suggestion;
+            badge.onclick = () => {
+                document.getElementsByName('index_name')[0].value = suggestion;
+            };
+            badgesContainer.appendChild(badge);
+        });
+
+        document.getElementById('index-suggestions').style.display = 'block';
+    } else {
+        document.getElementById('index-suggestions').style.display = 'none';
+    }
+}
+
+
+        // Repository search functionality
+        document.getElementById('repoSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const select = document.getElementById('repoSelect');
+            const options = select.options;
+            
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
+                if (option.text.toLowerCase().includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+<!-- 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Splunk-Jenkins Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: {{ colors.primary }};
+            --secondary: {{ colors.secondary }};
+            --accent: {{ colors.accent }};
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+        }
+        
+        .main-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        
+        .header-card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            border: none;
+            overflow: hidden;
+        }
+        
+        .avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+            object-fit: cover;
+        }
+        
+        .ai-badge {
+            background: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        
+        .form-card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: var(--primary);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 0.25rem rgba(78, 121, 167, 0.25);
+        }
+        
+        .ai-tip {
+            background: linear-gradient(135deg, rgba(232, 244, 248, 0.9), rgba(225, 239, 247, 0.9));
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-style: italic;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ai-tip:before {
+            content: "💡 AI Tip";
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .ai-tip:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            opacity: 0.1;
+            border-radius: 50%;
+            transform: translate(20px, -20px);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .suggestion-badge {
+            display: inline-block;
+            background: rgba(78, 121, 167, 0.1);
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(78, 121, 167, 0.2);
+        }
+        
+        .suggestion-badge:hover {
+            background: rgba(78, 121, 167, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .add-repo-btn {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 10px;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .add-repo-btn i {
+            margin-right: 5px;
+        }
+        
+        .cron-explanation {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .floating-label {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .floating-label .form-control {
+            padding-top: 25px;
+        }
+        
+        .floating-label label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+        
+        .custom-cron-container {
+            background: rgba(248, 249, 250, 0.7);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px dashed #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="card header-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    {% if user.avatar_url %}
+                    <img src="{{ user.avatar_url }}" class="avatar me-3" alt="User Avatar">
+                    {% endif %}
+                    <div>
+                        <h2 class="mb-1">AI Splunk-Jenkins Assistant <span class="ai-badge">Beta</span></h2>
+                        <p class="mb-0 text-muted">Welcome back, {{ user.name or user.username }}! Let's configure your monitoring pipeline.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-tip">{{ ai_tip }}</div>
+
+        <form action="/submit" method="POST" class="form-card">
+            <h3 class="section-title">Project Configuration</h3>
+            
+            <div class="mb-3 floating-label">
+                <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                <label>Your Email Address</label>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="business_name" class="form-control" required onkeyup="suggestIndex()">
+                <label>Business/Project Name</label>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="index_name" class="form-control" placeholder=" " id="indexInput">
+                <label>Index Name</label>
+                <div id="index-suggestions" style="display:none; margin-top:10px;">
+                    <p class="text-muted mb-2">AI Suggestions:</p>
+                    <div id="suggestionBadges"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Select Repository</label>
+                <div class="search-container">
+                    <input type="text" class="form-control" id="repoSearch" placeholder="Search repositories...">
+                    <i class="bi bi-search search-icon"></i>
+                </div>
+                <select name="repo_url" class="form-select" required id="repoSelect">
+                    {% for repo in repos %}
+                        <option value="{{ repo.html_url }}">{{ repo.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="mt-2">
+                    <a href="https://github.com/new" target="_blank" class="add-repo-btn">
+                        <i class="bi bi-plus-circle"></i> Create New Repository
+                    </a>
+                </div>
+            </div>
+
+            <h3 class="section-title mt-4">Monitoring Setup</h3>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="monitor_path" class="form-control" required>
+                <label>Monitor Path (Log Location)</label>
+                <small class="text-muted">Example: /var/log/app/*.log</small>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="source_type" class="form-control">
+                <label>Source Type (optional)</label>
+                <small class="text-muted">Example: json, syslog, or custom type</small>
+            </div>
+            
+            <div class="mb-3 floating-label">
+                <input type="text" name="agent_label" class="form-control" required>
+                <label>Jenkins Agent Label</label>
+                <small class="text-muted">Example: 'gpu-nodes' or 'azure-team'</small>
+            </div>
+
+            <h3 class="section-title mt-4">Cron Expression Validator & Explainer</h3>
+           <div id="cron-validator-wrapper" class="custom-cron-container mt-4">
+    <label for="cron_schedule" class="form-label">Cron Schedule</label>
+    <input
+        type="text"
+        id="cron_schedule"
+        name="cron_schedule"
+        class="form-control mt-2"
+        placeholder="e.g. */15 * * * *"
+        autocomplete="off"
+        spellcheck="false"
+        required
+    />
+    <div id="cronOutput" class="output mt-3" style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 10px; color: #212529;">
+        Explanation will appear here...
+    </div>
+</div>
+<div class="d-grid mt-3">
+    <button type="button" class="btn btn-outline-success btn-lg" onclick="createJenkinsJob()">
+        <i class="bi bi-gear-fill me-2"></i> Create Jenkins Pipeline on Server
+    </button>
+</div>
+
+<script>
+    const cronInput = document.getElementById('cron_schedule');
+    const cronOutput = document.getElementById('cronOutput');
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function explainField(value, fieldName) {
+        if (value === '*') return `every ${fieldName}`;
+        if (value.startsWith('*/')) return `every ${value.slice(2)} ${fieldName}${value.slice(2) > 1 ? 's' : ''}`;
+        if (value.includes(',')) {
+            const vals = value.split(',').map(v => fieldName === 'day of week' && !isNaN(v) ? daysOfWeek[+v] : v);
+            return `${fieldName} is ${vals.join(', ')}`;
+        }
+        if (value.includes('-')) {
+            const [start, end] = value.split('-');
+            return `${fieldName} from ${start} to ${end}`;
+        }
+        if (fieldName === 'day of week' && !isNaN(value)) return `${fieldName} is ${daysOfWeek[+value]}`;
+        return `${fieldName} is ${value}`;
+    }
+
+    function parseCron(expr) {
+        const parts = expr.trim().split(/\s+/);
+        if (parts.length !== 5) return { error: 'Cron expression must have exactly 5 fields separated by spaces.' };
+
+        const [min, hour, dayOfMonth, month, dayOfWeek] = parts;
+        const validPart = part => /^(\*|(\*\/\d+)|(\d+(-\d+)?)(,\d+(-\d+)?)*)$/.test(part.toLowerCase());
+
+        for (let i = 0; i < 5; i++) {
+            if (!validPart(parts[i])) return { error: `Invalid value in field ${i+1}: "${parts[i]}"` };
+        }
+
+        const explanations = [
+            explainField(min, 'minute'),
+            explainField(hour, 'hour'),
+            explainField(dayOfMonth, 'day of month'),
+            explainField(month, 'month'),
+            explainField(dayOfWeek, 'day of week')
+        ];
+
+        return { explanation: explanations.join(', ') + '.' };
+    }
+
+    cronInput.addEventListener('input', () => {
+        const value = cronInput.value;
+        if (!value) {
+            cronOutput.textContent = 'Explanation will appear here...';
+            cronOutput.classList.remove('text-danger');
+            return;
+        }
+
+        const result = parseCron(value);
+        if (result.error) {
+            cronOutput.textContent = result.error;
+            cronOutput.classList.add('text-danger');
+        } else {
+            cronOutput.textContent = result.explanation;
+            cronOutput.classList.remove('text-danger');
+        }
+    });
+</script>
+<script>
+function createJenkinsJob() {
+    const projectInput = document.querySelector('[name="business_name"]');
+    const monitorInput = document.querySelector('[name="monitor_path"]');
+    const agentInput = document.querySelector('[name="agent_label"]');
+    const indexInput = document.querySelector('[name="index_name"]');
+    const cronInput = document.getElementById('cronInput');
+
+    console.log({ projectInput, monitorInput, agentInput, indexInput, cronInput });
+
+    if (!projectInput || !monitorInput || !agentInput || !indexInput || !cronInput) {
+        alert("❌ One or more input fields are missing in the DOM!");
+        return;
+    }
+
+    const projectName = projectInput.value;
+    const monitorPath = monitorInput.value;
+    const agentLabel = agentInput.value;
+    const indexName = indexInput.value;
+    const cron = cronInput.value;
+
+    fetch('/create-jenkins-job', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            project_name: projectName,
+            monitor_path: monitorPath,
+            agent_label: agentLabel,
+            index_name: indexName,
+            cron_expression: cron
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ Jenkins job created: " + data.job_name);
+        } else {
+            alert("❌ Failed: " + data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("❌ Error creating Jenkins job.");
+    });
+}
+</script>-->
+
+           
+<!-- <div id="cron-validator-wrapper" class="custom-cron-container mt-4">
+    
+    <input
+        type="text"
+        id="cronInput"
+        class="form-control mt-2"
+        placeholder="Enter cron (e.g. */9 * */5 * *)"
+        autocomplete="off"
+        spellcheck="false"
+    />
+    <div id="cronOutput" class="output mt-3" style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 10px; color: #212529;">
+        Explanation will appear here...
+    </div>
+</div>
+
+<script>
+    const cronInput = document.getElementById('cronInput');
+    const cronOutput = document.getElementById('cronOutput');
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function explainField(value, fieldName) {
+        if (value === '*') return `every ${fieldName}`;
+        else if (value.startsWith('*/')) {
+            return `every ${value.slice(2)} ${fieldName}${value.slice(2) > 1 ? 's' : ''}`;
+        } else if (value.includes(',')) {
+            const vals = value.split(',').map(v => (fieldName === 'day of week' && !isNaN(v) ? daysOfWeek[+v] : v));
+            return `${fieldName} is ${vals.join(', ')}`;
+        } else if (value.includes('-')) {
+            const range = value.split('-');
+            return `${fieldName} from ${range[0]} to ${range[1]}`;
+        } else {
+            if (fieldName === 'day of week' && !isNaN(value)) return `${fieldName} is ${daysOfWeek[+value]}`;
+            return `${fieldName} is ${value}`;
+        }
+    }
+
+    function parseCron(expr) {
+        const parts = expr.trim().split(/\s+/);
+        if (parts.length !== 5) return { error: 'Cron expression must have exactly 5 fields separated by spaces.' };
+
+        const [min, hour, dayOfMonth, month, dayOfWeek] = parts;
+        const validPart = part => /^(\*|(\*\/\d+)|(\d+(-\d+)?)(,\d+(-\d+)?)*)$/.test(part.toLowerCase());
+
+        for (let i = 0; i < 5; i++) {
+            if (!validPart(parts[i])) return { error: `Invalid value in field ${i+1}: "${parts[i]}"` };
+        }
+
+        const explanations = [
+            explainField(min, 'minute'),
+            explainField(hour, 'hour'),
+            explainField(dayOfMonth, 'day of month'),
+            explainField(month, 'month'),
+            explainField(dayOfWeek, 'day of week')
+        ];
+
+        return { explanation: explanations.join(', ') + '.' };
+    }
+
+    cronInput.addEventListener('input', () => {
+        const value = cronInput.value;
+        if (!value) {
+            cronOutput.textContent = 'Explanation will appear here...';
+            cronOutput.classList.remove('text-danger');
+            return;
+        }
+
+        const result = parseCron(value);
+        if (result.error) {
+            cronOutput.textContent = result.error;
+            cronOutput.classList.add('text-danger');
+        } else {
+            cronOutput.textContent = result.explanation;
+            cronOutput.classList.remove('text-danger');
+        }
+    });
+</script> -->
+
+<!--
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-magic me-2"></i> Generate AI-Optimized Pipeline
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle custom cron field
+        function toggleCustomCron(value) {
+            const field = document.getElementById('custom_cron');
+            field.style.display = (value === 'Custom AI Schedule') ? 'block' : 'none';
+        }
+        
+        // Suggest index names
+        function suggestIndex() {
+            const businessName = document.getElementsByName('business_name')[0].value;
+            if(businessName) {
+                const base = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+                const currentYear = new Date().getFullYear();
+                
+                const suggestions = [
+                    `${base}-logs-${currentYear}`,
+                    `${base}-metrics`,
+                    `${base}-analytics`,
+                    `${base}-data`,
+                    `monitoring-${base}`
+                ];
+                
+                const badgesContainer = document.getElementById('suggestionBadges');
+                badgesContainer.innerHTML = '';
+                
+                suggestions.forEach(suggestion => {
+                    const badge = document.createElement('span');
+                    badge.className = 'suggestion-badge';
+                    badge.textContent = suggestion;
+                    badge.onclick = () => {
+                        document.getElementsByName('index_name')[0].value = suggestion;
+                    };
+                    badgesContainer.appendChild(badge);
+                });
+                
+                document.getElementById('index-suggestions').style.display = 'block';
+            } else {
+                document.getElementById('index-suggestions').style.display = 'none';
+            }
+        }
+        
+        // Repository search functionality
+        document.getElementById('repoSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const select = document.getElementById('repoSelect');
+            const options = select.options;
+            
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
+                if (option.text.toLowerCase().includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+ -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Splunk-Jenkins Assistant</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4e79a7;
+            --secondary: #f28e2b;
+            --accent: #76b7b2;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .main-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+        }
+
+        .ai-badge {
+            background-color: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        .form-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 0.2rem rgba(242, 142, 43, 0.25);
+        }
+
+        .section-title {
+            border-bottom: 2px solid var(--secondary);
+            margin-bottom: 20px;
+            padding-bottom: 5px;
+            color: var(--primary);
+        }
+
+        .ai-tip {
+            background: #e8f4f8;
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            margin: 20px 0;
+            font-style: italic;
+            border-radius: 8px;
+        }
+
+        .suggestion-badge {
+            display: inline-block;
+            background: #eef3f8;
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin: 4px;
+            cursor: pointer;
+            border: 1px solid #d0d7de;
+        }
+
+        .suggestion-badge:hover {
+            background: #dbe6f1;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+            font-weight: 600;
+            padding: 12px 30px;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+
+        .cron-output {
+            background: #f1f3f5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .text-danger {
+            color: #dc3545 !important;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="d-flex align-items-center mb-4">
+            {% if user.avatar_url %}
+                <img src="{{ user.avatar_url }}" class="avatar" alt="User Avatar">
+            {% endif %}
+            <div>
+                <h2>AI Splunk-Jenkins Assistant <span class="ai-badge">Beta</span></h2>
+                <p class="text-muted">Welcome back, {{ user.name or user.username }}! Let’s configure your monitoring pipeline.</p>
+            </div>
+        </div>
+
+        <div class="ai-tip">💡 Tip: Use short and meaningful project names for better suggestions.</div>
+
+        <form action="/submit" method="POST" class="form-card">
+            <h4 class="section-title">Project Configuration</h4>
+
+            <div class="mb-3">
+                <label class="form-label">Your Email</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Business / Project Name</label>
+                <input type="text" name="business_name" class="form-control" onkeyup="suggestIndex()" required>
+            </div>
+
+            <div class="mb-3">
+                <input type="text" name="index_name" class="form-control" placeholder=" " id="indexInput">
+                <label>Index Name</label>
+                <div id="index-suggestions" style="display:none; margin-top:10px;">
+                    <p class="text-muted mb-2">AI Suggestions:</p>
+                    <div id="suggestionBadges"></div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Select Repository</label>
+                <div class="search-container">
+                    <input type="text" class="form-control" id="repoSearch" placeholder="Search repositories...">
+                    <i class="bi bi-search search-icon"></i>
+                </div>
+                <select name="repo_url" class="form-select" required id="repoSelect">
+                    {% for repo in repos %}
+                        <option value="{{ repo.html_url }}">{{ repo.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="mt-2">
+                    <a href="https://github.com/new" target="_blank" class="add-repo-btn">
+                        <i class="bi bi-plus-circle"></i> Create New Repository
+                    </a>
+                </div>
+            </div>
+
+            <h4 class="section-title">Monitoring Setup</h4>
+
+            <div class="mb-3">
+                <label class="form-label">Log Path</label>
+                <input type="text" name="monitor_path" class="form-control" placeholder="/var/log/app/*.log" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Source Type</label>
+                <input type="text" name="source_type" class="form-control" placeholder="e.g., json, syslog">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Jenkins Agent Label</label>
+                <input type="text" name="agent_label" class="form-control" required>
+            </div>
+
+            <h4 class="section-title">Cron Schedule & Explanation</h4>
+
+            <div class="mb-3">
+                <input type="text" id="cronInput" name="cron_schedule" class="form-control" placeholder="Enter cron expression (e.g., */15 * * * *)">
+                <div id="cronOutput" class="cron-output mt-2">Explanation will appear here...</div>
+            </div>
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-robot"></i> Generate AI-Optimized Pipeline
+                </button>
+            </div>
+        </form>
+    </div>
+
+    
+    <script>
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+        function validateRange(val, min, max) {
+            return val === '*' || val.split(',').every(part => {
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(Number);
+                    return start >= min && end <= max;
+                }
+                if (part.includes('/')) {
+                    const [base, step] = part.split('/');
+                    return (!isNaN(base) && base >= min && base <= max) || base === '*';
+                }
+                return !isNaN(part) && Number(part) >= min && Number(part) <= max;
+            });
+        }
+
+        function explainField(val, label, names = [], min = 0, max = 59) {
+            if (!validateRange(val, min, max)) {
+                return `<span class="text-danger">${label} is invalid</span>`;
+            }
+            if (val === '*') return `every ${label}`;
+            if (val.startsWith('*/')) return `every ${val.slice(2)} ${label}(s)`;
+            if (names.length && /^[0-9,\-\/]+$/.test(val)) {
+                return val.split(',').map(part => {
+                    if (part.includes('-')) {
+                        const [start, end] = part.split('-').map(Number);
+                        return `${names[start]} to ${names[end]}`;
+                    }
+                    return names[parseInt(part)] || part;
+                }).join(', ');
+            }
+            return `${label} = ${val}`;
+        }
+
+        document.getElementById('cronInput').addEventListener('input', function () {
+            const input = this.value.trim();
+            const output = document.getElementById('cronOutput');
+
+            if (!input) {
+                output.innerHTML = 'Explanation will appear here...';
+                return;
+            }
+
+            const fields = input.split(' ');
+            if (fields.length !== 5) {
+                output.innerHTML = '<span class="text-danger">Invalid format. Must be 5 space-separated fields.</span>';
+                return;
+            }
+
+            const [min, hour, dom, month, dow] = fields;
+
+            const explanation = `
+                Minute: ${explainField(min, 'minute', [], 0, 59)}<br>
+                Hour: ${explainField(hour, 'hour', [], 0, 23)}<br>
+                Day of Month: ${explainField(dom, 'day of month', [], 1, 31)}<br>
+                Month: ${explainField(month, 'month', monthNames, 1, 12)}<br>
+                Day of Week: ${explainField(dow, 'day of week', dayNames, 0, 6)}<br>
+            `;
+
+            output.innerHTML = explanation;
+        });
+
+        function suggestIndex() {
+            const indexInput = document.getElementById('indexInput').value.trim();
+            const suggestions = ["prod_logs", "test_logs", "dev_logs", "audit_logs"];  // Replace with dynamic fetch logic
+
+            const suggestionBadges = document.getElementById('suggestionBadges');
+            suggestionBadges.innerHTML = ''; // Clear previous suggestions
+
+            if (indexInput.length >= 3) {
+                document.getElementById('index-suggestions').style.display = 'block';
+                suggestions.forEach(suggestion => {
+                    const badge = document.createElement('span');
+                    badge.className = 'suggestion-badge';
+                    badge.textContent = suggestion;
+                    badge.addEventListener('click', function () {
+                        document.getElementById('indexInput').value = suggestion;
+                        document.getElementById('index-suggestions').style.display = 'none';
+                    });
+                    suggestionBadges.appendChild(badge);
+                });
+            } else {
+                document.getElementById('index-suggestions').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> -->
